@@ -1010,12 +1010,17 @@ const Index = () => {
       </main>
 
       <footer className="border-t border-border/60 bg-background/40 backdrop-blur">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-[12px] text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-[12px] text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             Portfolio piece · Senior PM, Healthcare AI · 2026
           </div>
-          <div className="font-mono text-[11px] uppercase tracking-wider">
+          <div className="font-mono text-[11px] uppercase tracking-wider sm:text-right">
             Built for the 90-second read · light · audited · scoped LLM
+          </div>
+        </div>
+        <div className="border-t border-border/60">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3 text-[11px] text-muted-foreground">
+            Independent portfolio submission for a Senior PM application. Not affiliated with, endorsed by, or associated with Level AI in any way. All scenarios, data, and product names are illustrative.
           </div>
         </div>
       </footer>
