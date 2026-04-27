@@ -541,38 +541,22 @@ const Index = () => {
             </span>
             <span>HMAC TTL 600s</span>
           </div>
-          <a
-            href="#scenarios"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-colors px-4 py-2 text-sm font-medium shadow-card"
-          >
-            Try a scenario
-            <ArrowRight size={14} />
-          </a>
         </div>
       </header>
 
-      {/* ============================ HERO ============================ */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-6">
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-end">
+      {/* ============================ METADATA STRIP ============================ */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-card/70 backdrop-blur border border-border px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-5">
-              <Cpu size={11} className="text-primary" />
-              Healthcare AI · Voice agent simulator
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Use Case A · Voice Inbound · Salesforce-backed · Scoped LLM
             </div>
-            <h1 className="font-display font-bold text-[40px] sm:text-[56px] lg:text-[68px] leading-[1.02] tracking-tight text-foreground">
-              Deterministic where it must be.
-              <br />
-              <span className="text-primary">Smart where it can be.</span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              An inbound voice agent for medication refills. Watch six real scenarios fire through an
-              8-state machine — Salesforce-backed, scoped LLM, audited escalations.
-            </p>
+            <div className="font-display font-semibold text-foreground text-lg sm:text-xl mt-1 leading-tight">
+              Refill Agent — interactive simulator
+            </div>
           </div>
-          <div className="hidden lg:flex flex-col gap-3 text-sm">
-            <HeroStat label="Hard rules enforced" value="6" sub="R1 – R7" />
-            <HeroStat label="States visible" value="8 / 8" sub="no pagination, no hiding" />
-            <HeroStat label="Escalation reasons" value="7" sub="every failure has a code" />
+          <div className="font-mono text-[11px] text-muted-foreground">
+            6 scenarios · 8 states · 7 escalation reasons
           </div>
         </div>
       </section>
