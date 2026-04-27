@@ -1,10 +1,10 @@
-# Healthcare AI Voice Agent Simulator — Build Plan
+# Healthcare AI Voice Agent Simulator - Build Plan
 
 A single-screen, fixed-layout interactive simulator demonstrating a deterministic state machine for medication refills. Optimized to communicate PM-level depth in 90 seconds.
 
 ## What gets built
 
-One file: `src/pages/Index.tsx` — a self-contained React component rendering the entire simulator. Existing `Index.tsx` placeholder gets fully replaced. No routing changes, no new dependencies.
+One file: `src/pages/Index.tsx` - a self-contained React component rendering the entire simulator. Existing `Index.tsx` placeholder gets fully replaced. No routing changes, no new dependencies.
 
 ## Layout (fixed, no page scroll @ 1440×900)
 
@@ -51,7 +51,7 @@ One file: `src/pages/Index.tsx` — a self-contained React component rendering t
 Left: 8×8 gradient mark + `Refill Agent · Use Case A · Voice Inbound · v0.4` (Inter, slate-200/slate-500 mix).
 Right (mono uppercase 9px, space-separated): green pulsing dot `SESSION LIVE` · `HMAC TTL 600s` · `PHI-REDACTED LOG`.
 
-## Left — Scenario Picker
+## Left - Scenario Picker
 
 Six button cards, each with: title (Inter 12px medium), one-line blurb (slate-500 11px), and a mono uppercase sticker tag in the corner.
 
@@ -66,7 +66,7 @@ Six button cards, each with: title (Inter 12px medium), one-line blurb (slate-50
 
 Selecting any card resets state and starts playback. No reset button.
 
-## Center — State Machine
+## Center - State Machine
 
 Eight vertically stacked rows, all visible simultaneously. Each row:
 - Index `01`–`08` in mono dim slate
@@ -85,7 +85,7 @@ Eight vertically stacked rows, all visible simultaneously. Each row:
 
 **Hard Rules Ribbon** (always visible, below states): row of mono chips `R1 · DOB before disclosure`, `R2 · Controlled→escalate`, `R3 · Inactive→block`, `R4 · 2-retry cap`, `R6 · 10-transition cap`.
 
-## Right — Patient View / Human Handoff
+## Right - Patient View / Human Handoff
 
 **Default mode (Patient View):**
 - Section header `PATIENT VIEW` mono uppercase
@@ -93,11 +93,11 @@ Eight vertically stacked rows, all visible simultaneously. Each row:
 
 **Escalation takeover** (full panel replace):
 - Red header bar with `AlertTriangle` (lucide), title `EscalationContext received`
-- `SAID TO PATIENT` — safe acknowledgment in italic gray, left-bordered
-- `REASON CODE` — red pill with reason code in mono
-- `CONTEXT PAYLOAD` — JSON block, bg `#070a10`, border slate-800. Syntax-colored manually: keys `blue-300`, string values `emerald-300`, braces/commas `slate-500`, numbers `amber-300`.
-- `WHY` — slate card citing the verbatim rule (e.g. `R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.`)
-- `RECEIVING AGENT` — small avatar circle + `Specialist · queue 02` + mono caption `context received · session ownership transferred`
+- `SAID TO PATIENT` - safe acknowledgment in italic gray, left-bordered
+- `REASON CODE` - red pill with reason code in mono
+- `CONTEXT PAYLOAD` - JSON block, bg `#070a10`, border slate-800. Syntax-colored manually: keys `blue-300`, string values `emerald-300`, braces/commas `slate-500`, numbers `amber-300`.
+- `WHY` - slate card citing the verbatim rule (e.g. `R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.`)
+- `RECEIVING AGENT` - small avatar circle + `Specialist · queue 02` + mono caption `context received · session ownership transferred`
 
 EscalationContext payloads (rendered verbatim per reason code):
 
@@ -129,7 +129,7 @@ Audit drawer (200px, slides up over bottom of screen with CSS transform/transiti
 Cleanup on scenario change clears all pending timeouts.
 
 **Mock metric calibration:**
-- Tokens — deterministic: `40 + floor(rand*60)`; LLM (SELECT_MED, CONFIRM_PHARMACY): `180 + floor(rand*120)`; COMPLETE: 0
+- Tokens - deterministic: `40 + floor(rand*60)`; LLM (SELECT_MED, CONFIRM_PHARMACY): `180 + floor(rand*120)`; COMPLETE: 0
 - Latency per state (matching design doc §9):
   - IDENTIFY ~210ms, VERIFY_DOB ~120ms, FETCH_MEDS ~310ms
   - SELECT_MED / CONFIRM_PHARMACY 380–460ms
@@ -146,7 +146,7 @@ A single `SCENARIOS` const array. Each scenario:
     { escalate?: { reason, payload, ruleCitation, safeAck } }
 ] }
 ```
-All "LLM" outputs are scripted strings — no API calls.
+All "LLM" outputs are scripted strings - no API calls.
 
 ## Acceptance verification (built into the implementation)
 
@@ -163,7 +163,7 @@ All "LLM" outputs are scripted strings — no API calls.
 ## Technical notes
 
 - Single file `src/pages/Index.tsx` fully replacing the placeholder.
-- No changes to `App.tsx`, Tailwind config, or `index.css` — all custom styling done with arbitrary Tailwind values + one inline `<style>` block (Google Fonts import + the red pulse keyframe + center-grid background gradient).
+- No changes to `App.tsx`, Tailwind config, or `index.css` - all custom styling done with arbitrary Tailwind values + one inline `<style>` block (Google Fonts import + the red pulse keyframe + center-grid background gradient).
 - State managed with `useState` + `useRef` (timeout id list for cleanup) + `useEffect`.
 - lucide-react icons used: `AlertTriangle`, `Phone`, `ShieldCheck`, `Pill`, `CheckCircle2`, `Activity`, `ChevronUp`, `Circle`, `User`.
 - No new packages installed; both React and lucide-react are already in the project.

@@ -17,7 +17,7 @@ import {
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type Authority = "DETERMINISTIC" | "LLM" | "—";
+type Authority = "DETERMINISTIC" | "LLM" | "-";
 type Status = "idle" | "deterministic" | "llm" | "escalation" | "complete";
 
 type ReasonCode =
@@ -72,7 +72,7 @@ const STATES: { id: StateId; authority: Authority; label: string }[] = [
   { id: "VALIDATE_MED",     authority: "DETERMINISTIC", label: "Validate" },
   { id: "CONFIRM_PHARMACY", authority: "LLM",           label: "Confirm pharmacy" },
   { id: "CREATE_REFILL",    authority: "DETERMINISTIC", label: "Create refill" },
-  { id: "COMPLETE",         authority: "—",             label: "Complete" },
+  { id: "COMPLETE",         authority: "-",             label: "Complete" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -105,7 +105,7 @@ const SCENARIOS: Scenario[] = [
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.94 · Atorvastatin",
         patientLine: "Thanks. I see three active prescriptions on file. Which one are you looking to refill today?" },
-      { state: "VALIDATE_MED", tool: "—", latency: 87, tokens: detTok(),
+      { state: "VALIDATE_MED", tool: "-", latency: 87, tokens: detTok(),
         outcome: "Controlled=false · Active=true" },
       { state: "CONFIRM_PHARMACY", tool: "llm.confirm", latency: llmLat(), tokens: llmTok(),
         outcome: "confirmed · Walgreens #4421",
@@ -113,7 +113,7 @@ const SCENARIOS: Scenario[] = [
       { state: "CREATE_REFILL", tool: "POST /refills", latency: 418, tokens: detTok(),
         outcome: "201 Created · rx_88a2",
         patientLine: "Submitting that refill now." },
-      { state: "COMPLETE", tool: "—", latency: 12, tokens: 0,
+      { state: "COMPLETE", tool: "-", latency: 12, tokens: 0,
         outcome: "session closed · clean",
         patientLine: "All set. Your pharmacy will text you when it's ready for pickup. Is there anything else I can help with?" },
     ],
@@ -134,10 +134,10 @@ const SCENARIOS: Scenario[] = [
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 311, tokens: detTok(),
         outcome: "2 rows · 1 flagged Controlled__c=true",
         patientLine: "One moment while I pull up your medications." },
-      { state: "SELECT_MED", tool: "—", latency: 0, tokens: 0,
+      { state: "SELECT_MED", tool: "-", latency: 0, tokens: 0,
         outcome: "BYPASSED · controlled flag detected pre-LLM",
         pulseRed: true },
-      { state: "VALIDATE_MED", tool: "—", latency: 91, tokens: detTok(),
+      { state: "VALIDATE_MED", tool: "-", latency: 91, tokens: detTok(),
         outcome: "Controlled=true → ESCALATE",
         pulseRed: true,
         patientLine: "I'm not able to process this particular refill myself. I'm going to connect you with a specialist who can take it from here. Please hold.",
@@ -160,17 +160,17 @@ const SCENARIOS: Scenario[] = [
         patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 121, tokens: detTok(),
         outcome: "mismatch · attempt 1/2",
-        patientLine: "To get started, I'll need to verify your identity. What's your date of birth — month, day, and year?" },
+        patientLine: "To get started, I'll need to verify your identity. What's your date of birth - month, day, and year?" },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 119, tokens: detTok(),
         outcome: "mismatch · attempt 2/2",
-        patientLine: "That didn't match what we have on file. Let's try once more — your full date of birth, including the year." },
+        patientLine: "That didn't match what we have on file. Let's try once more - your full date of birth, including the year." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 117, tokens: detTok(),
         outcome: "mismatch → ESCALATE",
         escalate: {
           reason: "dob_failure",
           payload: { patient_id: "p_30188", attempt_count: 2, timestamp: "2026-04-27T13:31:08Z" },
           ruleCitation: "R1 · DOB must be verified before any medication field, name, or count is disclosed.",
-          safeAck: "I wasn't able to verify your identity over the phone. I'm transferring you to someone who can help — please hold.",
+          safeAck: "I wasn't able to verify your identity over the phone. I'm transferring you to someone who can help - please hold.",
         } },
     ],
   },
@@ -185,7 +185,7 @@ const SCENARIOS: Scenario[] = [
         patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 120, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Can you confirm your date of birth — month, day, and year?" },
+        patientLine: "Can you confirm your date of birth - month, day, and year?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 312, tokens: detTok(),
         outcome: "4 rows" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
@@ -214,7 +214,7 @@ const SCENARIOS: Scenario[] = [
     id: "inactive",
     title: "Inactive medication",
     sticker: "ELIGIBILITY",
-    blurb: "Active__c flipped between fetch and validate — block + escalate.",
+    blurb: "Active__c flipped between fetch and validate - block + escalate.",
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 211, tokens: detTok(),
         outcome: "200 OK · pid=p_60412",
@@ -227,7 +227,7 @@ const SCENARIOS: Scenario[] = [
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.96 · Lisinopril",
         patientLine: "Got it. Which of your medications are you looking to refill?" },
-      { state: "VALIDATE_MED", tool: "—", latency: 92, tokens: detTok(),
+      { state: "VALIDATE_MED", tool: "-", latency: 92, tokens: detTok(),
         outcome: "Active=false → ESCALATE",
         escalate: {
           reason: "no_active_medications",
@@ -260,7 +260,7 @@ const SCENARIOS: Scenario[] = [
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.95 · Atorvastatin",
         patientLine: "Thanks. Which medication are you refilling today?" },
-      { state: "VALIDATE_MED", tool: "—", latency: 89, tokens: detTok(),
+      { state: "VALIDATE_MED", tool: "-", latency: 89, tokens: detTok(),
         outcome: "Controlled=false · Active=true" },
       { state: "CONFIRM_PHARMACY", tool: "llm.confirm", latency: llmLat(), tokens: llmTok(),
         outcome: "confirmed · CVS #1188",
@@ -270,7 +270,7 @@ const SCENARIOS: Scenario[] = [
         patientLine: "Submitting your refill now. Just one moment." },
       { state: "CREATE_REFILL", tool: "POST /refills", latency: 431, tokens: detTok(),
         outcome: "503 → ESCALATE",
-        patientLine: "Hmm — let me try that again.",
+        patientLine: "Hmm - let me try that again.",
         escalate: {
           reason: "api_failure",
           payload: {
@@ -288,7 +288,7 @@ const SCENARIOS: Scenario[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Visual helpers — light theme, semantic tokens                      */
+/*  Visual helpers - light theme, semantic tokens                      */
 /* ------------------------------------------------------------------ */
 
 const authorityToStatus = (a: Authority): Status =>
@@ -499,7 +499,7 @@ const Index = () => {
         if (step.escalate) {
           setAudit((prev) => [
             ...prev,
-            { idx: prev.length + 1, state: "—", tool: "escalate_to_human", latency: null, tokens: null, outcome: step.escalate!.reason.toUpperCase() },
+            { idx: prev.length + 1, state: "-", tool: "escalate_to_human", latency: null, tokens: null, outcome: step.escalate!.reason.toUpperCase() },
           ]);
           setEscalation(step.escalate);
         }
@@ -555,7 +555,7 @@ const Index = () => {
               Patient Voice Agent · Salesforce-backed · Scoped LLM
             </div>
             <div className="font-display font-semibold text-foreground text-lg sm:text-xl mt-1 leading-tight">
-              Cadence — Use Case A · Medication Refill
+              Cadence - Use Case A · Medication Refill
             </div>
           </div>
           <div className="font-mono text-[11px] text-muted-foreground">
@@ -576,14 +576,14 @@ const Index = () => {
                 Cadence is a voice agent that helps patients refill an active medication over the phone.
                 It looks up the patient by phone number, verifies date of birth, fetches their active
                 medications from Salesforce, confirms which one to refill, and submits the request to the
-                pharmacy on file. When something falls outside what the agent should handle on its own —
-                a controlled substance, a failed identity check, an ambiguous medication name — it hands
+                pharmacy on file. When something falls outside what the agent should handle on its own -
+                a controlled substance, a failed identity check, an ambiguous medication name - it hands
                 the call to a human with the full context already attached.
               </p>
               <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
                 Pick a scenario on the left to watch the agent run. The center column is the state machine.
                 The right column is what the patient hears, and what the human specialist receives on
-                handoff. The footer is live telemetry — tokens, latency, audit events.
+                handoff. The footer is live telemetry - tokens, latency, audit events.
               </p>
             </div>
             <div className="rounded-xl bg-secondary/40 border border-border p-4">
@@ -595,21 +595,21 @@ const Index = () => {
                   <span className="h-1.5 w-1.5 rounded-full bg-info mt-1.5 shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">5 deterministic states</span>
-                    <span className="text-muted-foreground"> — identity, fetch, validate, persist. No LLM judgment.</span>
+                    <span className="text-muted-foreground"> - identity, fetch, validate, persist. No LLM judgment.</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-warning mt-1.5 shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">2 LLM states</span>
-                    <span className="text-muted-foreground"> — disambiguate the medication name, confirm the pharmacy.</span>
+                    <span className="text-muted-foreground"> - disambiguate the medication name, confirm the pharmacy.</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />
                   <div>
                     <span className="font-semibold text-foreground">Hard stops</span>
-                    <span className="text-muted-foreground"> — controlled meds, DOB failure, inactive meds, repeated tool failure all escalate to a human with a typed context payload.</span>
+                    <span className="text-muted-foreground"> - controlled meds, DOB failure, inactive meds, repeated tool failure all escalate to a human with a typed context payload.</span>
                   </div>
                 </div>
               </div>
@@ -624,7 +624,7 @@ const Index = () => {
         className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-32"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6">
-          {/* ============== LEFT — SCENARIOS ============== */}
+          {/* ============== LEFT - SCENARIOS ============== */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
               <div className="px-5 py-4 border-b border-border">
@@ -671,7 +671,7 @@ const Index = () => {
             </div>
           </aside>
 
-          {/* ============== CENTER — STATE MACHINE ============== */}
+          {/* ============== CENTER - STATE MACHINE ============== */}
           <section className="rounded-2xl bg-card border border-border shadow-card-lg overflow-hidden">
             <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
               <div>
@@ -731,7 +731,7 @@ const Index = () => {
                           ) : s.authority === "DETERMINISTIC" ? (
                             <span className="text-info">deterministic</span>
                           ) : (
-                            "—"
+                            "-"
                           )}
                         </div>
                       </div>
@@ -739,7 +739,7 @@ const Index = () => {
                       {/* tool / metrics */}
                       <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[110px]">
                         <div className="font-mono text-[11px] text-foreground/70 truncate max-w-[180px]">
-                          {r.tool && r.tool !== "—" ? r.tool : ""}
+                          {r.tool && r.tool !== "-" ? r.tool : ""}
                         </div>
                         <div className="font-mono text-[10px] text-muted-foreground">
                           {r.latency ? `${r.latency}ms` : ""} {r.tokens ? `· ${r.tokens}t` : ""}
@@ -794,7 +794,7 @@ const Index = () => {
             </div>
           </section>
 
-          {/* ============== RIGHT — PATIENT / HANDOFF ============== */}
+          {/* ============== RIGHT - PATIENT / HANDOFF ============== */}
           <aside className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
             {!escalation ? (
               <div>
@@ -960,8 +960,8 @@ const Index = () => {
                         <td className="py-2 px-4 text-muted-foreground">{String(row.idx).padStart(2, "0")}</td>
                         <td className="py-2 px-2 text-foreground">{row.state}</td>
                         <td className="py-2 px-2 text-foreground/80">{row.tool}</td>
-                        <td className="py-2 px-2 text-right text-foreground/80">{row.latency ? `${row.latency}ms` : "—"}</td>
-                        <td className="py-2 px-2 text-right text-foreground/80">{row.tokens ?? "—"}</td>
+                        <td className="py-2 px-2 text-right text-foreground/80">{row.latency ? `${row.latency}ms` : "-"}</td>
+                        <td className="py-2 px-2 text-right text-foreground/80">{row.tokens ?? "-"}</td>
                         <td className={"py-2 px-2 " + (isEsc ? "text-destructive font-semibold" : "text-foreground/80")}>
                           {row.outcome}
                         </td>
