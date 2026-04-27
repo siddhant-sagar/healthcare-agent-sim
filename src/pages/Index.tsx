@@ -96,25 +96,26 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 212, tokens: detTok(),
         outcome: "200 OK · pid=p_44910",
-        patientLine: "Hi, this is the refill line. I have your number on file." },
+        patientLine: "Hi, this is Cadence, the automated refill line for your clinic. I'm pulling up your account from the number you're calling from." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 118, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Could you please verify your date of birth?" },
+        patientLine: "Before we go any further, can you confirm your date of birth? Month, day, and year." },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 308, tokens: detTok(),
         outcome: "3 rows" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.94 · Atorvastatin",
-        patientLine: "I see three active medications. Which would you like to refill?" },
+        patientLine: "Thanks. I see three active prescriptions on file. Which one are you looking to refill today?" },
       { state: "VALIDATE_MED", tool: "—", latency: 87, tokens: detTok(),
         outcome: "Controlled=false · Active=true" },
       { state: "CONFIRM_PHARMACY", tool: "llm.confirm", latency: llmLat(), tokens: llmTok(),
         outcome: "confirmed · Walgreens #4421",
-        patientLine: "Sending to Walgreens on Kirkland Avenue, correct?" },
+        patientLine: "Got it. Your pharmacy on file is Walgreens on Kirkland Avenue. Should I send the refill there?" },
       { state: "CREATE_REFILL", tool: "POST /refills", latency: 418, tokens: detTok(),
         outcome: "201 Created · rx_88a2",
-        patientLine: "Your refill is submitted. You'll get an SMS when it's ready." },
+        patientLine: "Submitting that refill now." },
       { state: "COMPLETE", tool: "—", latency: 12, tokens: 0,
-        outcome: "session closed · clean" },
+        outcome: "session closed · clean",
+        patientLine: "All set. Your pharmacy will text you when it's ready for pickup. Is there anything else I can help with?" },
     ],
   },
   {
@@ -126,10 +127,10 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 207, tokens: detTok(),
         outcome: "200 OK · pid=p_55021",
-        patientLine: "Hi, this is the refill line. I have your number on file." },
+        patientLine: "Hi, this is Cadence, the automated refill line. I have your account pulled up." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 122, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Could you verify your date of birth, please?" },
+        patientLine: "Can you confirm your date of birth, please? Month, day, and year." },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 311, tokens: detTok(),
         outcome: "2 rows · 1 flagged Controlled__c=true",
         patientLine: "One moment while I pull up your medications." },
@@ -139,11 +140,12 @@ const SCENARIOS: Scenario[] = [
       { state: "VALIDATE_MED", tool: "—", latency: 91, tokens: detTok(),
         outcome: "Controlled=true → ESCALATE",
         pulseRed: true,
+        patientLine: "I'm not able to process this particular refill myself. I'm going to connect you with a specialist who can take it from here. Please hold.",
         escalate: {
           reason: "controlled_medication",
           payload: { patient_id: "p_55021", medication_id: "m_771", timestamp: "2026-04-27T13:31:08Z" },
           ruleCitation: "R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.",
-          safeAck: "I need to connect you with a specialist who can assist with this request.",
+          safeAck: "I'm not able to process this particular refill myself. Connecting you with a specialist now.",
         } },
     ],
   },
@@ -155,20 +157,20 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 214, tokens: detTok(),
         outcome: "200 OK · pid=p_30188",
-        patientLine: "Hi, this is the refill line." },
+        patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 121, tokens: detTok(),
         outcome: "mismatch · attempt 1/2",
-        patientLine: "Could you please verify your date of birth?" },
+        patientLine: "To get started, I'll need to verify your identity. What's your date of birth — month, day, and year?" },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 119, tokens: detTok(),
         outcome: "mismatch · attempt 2/2",
-        patientLine: "I didn't get a match. Let's try once more — your date of birth?" },
+        patientLine: "That didn't match what we have on file. Let's try once more — your full date of birth, including the year." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 117, tokens: detTok(),
         outcome: "mismatch → ESCALATE",
         escalate: {
           reason: "dob_failure",
           payload: { patient_id: "p_30188", attempt_count: 2, timestamp: "2026-04-27T13:31:08Z" },
           ruleCitation: "R1 · DOB must be verified before any medication field, name, or count is disclosed.",
-          safeAck: "I was unable to verify your identity. Let me connect you with a specialist.",
+          safeAck: "I wasn't able to verify your identity over the phone. I'm transferring you to someone who can help — please hold.",
         } },
     ],
   },
@@ -180,18 +182,18 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 209, tokens: detTok(),
         outcome: "200 OK · pid=p_71223",
-        patientLine: "Hi, this is the refill line." },
+        patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 120, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Could you verify your date of birth?" },
+        patientLine: "Can you confirm your date of birth — month, day, and year?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 312, tokens: detTok(),
         outcome: "4 rows" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.52 · ambiguous",
-        patientLine: "Did you mean Metformin or Metoprolol?" },
+        patientLine: "I have a few medications on file with similar names. Did you mean Metformin or Metoprolol?" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.49 · ambiguous · retry 1/2",
-        patientLine: "Sorry — could you spell the first three letters?" },
+        patientLine: "I'm having trouble catching that. Could you spell the first three letters?" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "retry 2/2 → ESCALATE",
         escalate: {
@@ -204,7 +206,7 @@ const SCENARIOS: Scenario[] = [
             tokens_used: 742,
           },
           ruleCitation: "R4 · SELECT_MED disambiguation capped at 2 retries.",
-          safeAck: "Let me connect you with a team member who can assist you directly.",
+          safeAck: "I want to make sure we get the right medication. Let me hand you over to someone who can confirm it with you.",
         } },
     ],
   },
@@ -216,15 +218,15 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 211, tokens: detTok(),
         outcome: "200 OK · pid=p_60412",
-        patientLine: "Hi, this is the refill line." },
+        patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 119, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Could you verify your date of birth?" },
+        patientLine: "Can you confirm your date of birth?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 309, tokens: detTok(),
         outcome: "2 rows" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.96 · Lisinopril",
-        patientLine: "Which medication would you like to refill?" },
+        patientLine: "Got it. Which of your medications are you looking to refill?" },
       { state: "VALIDATE_MED", tool: "—", latency: 92, tokens: detTok(),
         outcome: "Active=false → ESCALATE",
         escalate: {
@@ -237,7 +239,7 @@ const SCENARIOS: Scenario[] = [
             tokens_used: 386,
           },
           ruleCitation: "R3 · Active__c=false → block refill, escalate to a human.",
-          safeAck: "Let me connect you with a team member who can assist you directly.",
+          safeAck: "That prescription isn't currently active in our system. I'm going to put you through to someone who can sort that out.",
         } },
     ],
   },
@@ -249,24 +251,26 @@ const SCENARIOS: Scenario[] = [
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 215, tokens: detTok(),
         outcome: "200 OK · pid=p_82001",
-        patientLine: "Hi, this is the refill line." },
+        patientLine: "Hi, this is Cadence, the automated refill line." },
       { state: "VERIFY_DOB", tool: "validate_dob", latency: 124, tokens: detTok(),
         outcome: "match · token issued",
-        patientLine: "Could you verify your date of birth?" },
+        patientLine: "Can you confirm your date of birth?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 314, tokens: detTok(),
         outcome: "3 rows" },
       { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
         outcome: "conf=0.95 · Atorvastatin",
-        patientLine: "Which would you like to refill today?" },
+        patientLine: "Thanks. Which medication are you refilling today?" },
       { state: "VALIDATE_MED", tool: "—", latency: 89, tokens: detTok(),
         outcome: "Controlled=false · Active=true" },
       { state: "CONFIRM_PHARMACY", tool: "llm.confirm", latency: llmLat(), tokens: llmTok(),
         outcome: "confirmed · CVS #1188",
-        patientLine: "Sending to CVS on 4th, correct?" },
+        patientLine: "Sending that to CVS on Fourth Street, correct?" },
       { state: "CREATE_REFILL", tool: "POST /refills", latency: 422, tokens: detTok(),
-        outcome: "503 Service Unavailable · retry 1/2" },
+        outcome: "503 Service Unavailable · retry 1/2",
+        patientLine: "Submitting your refill now. Just one moment." },
       { state: "CREATE_REFILL", tool: "POST /refills", latency: 431, tokens: detTok(),
         outcome: "503 → ESCALATE",
+        patientLine: "Hmm — let me try that again.",
         escalate: {
           reason: "api_failure",
           payload: {
@@ -277,7 +281,7 @@ const SCENARIOS: Scenario[] = [
             timestamp: "2026-04-27T13:31:08Z",
           },
           ruleCitation: "R7 · POST /refills must return 2xx; ≥2 failures → api_failure escalation.",
-          safeAck: "I encountered an issue submitting your request. Connecting you to complete this.",
+          safeAck: "I'm having trouble submitting your refill on my end. I'll connect you with someone who can finish this for you.",
         } },
     ],
   },
@@ -522,10 +526,10 @@ const Index = () => {
             </div>
             <div className="min-w-0">
               <div className="font-display font-bold text-[15px] sm:text-base text-foreground leading-tight truncate">
-                Refill Agent
+                Cadence
               </div>
               <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-muted-foreground truncate">
-                Voice Inbound · Use Case A · v0.4
+                Use Case A · Medication Refill · v0.4
               </div>
             </div>
           </div>
@@ -548,14 +552,68 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Use Case A · Voice Inbound · Salesforce-backed · Scoped LLM
+              Patient Voice Agent · Salesforce-backed · Scoped LLM
             </div>
             <div className="font-display font-semibold text-foreground text-lg sm:text-xl mt-1 leading-tight">
-              Refill Agent — interactive simulator
+              Cadence — Use Case A · Medication Refill
             </div>
           </div>
           <div className="font-mono text-[11px] text-muted-foreground">
             6 scenarios · 8 states · 7 escalation reasons
+          </div>
+        </div>
+      </section>
+
+      {/* ============================ EXPLAINER ============================ */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+        <div className="rounded-2xl bg-card border border-border shadow-card px-6 py-5">
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-10 items-start">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
+                What you're looking at
+              </div>
+              <p className="text-[14px] sm:text-[15px] text-foreground leading-relaxed">
+                Cadence is a voice agent that helps patients refill an active medication over the phone.
+                It looks up the patient by phone number, verifies date of birth, fetches their active
+                medications from Salesforce, confirms which one to refill, and submits the request to the
+                pharmacy on file. When something falls outside what the agent should handle on its own —
+                a controlled substance, a failed identity check, an ambiguous medication name — it hands
+                the call to a human with the full context already attached.
+              </p>
+              <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
+                Pick a scenario on the left to watch the agent run. The center column is the state machine.
+                The right column is what the patient hears, and what the human specialist receives on
+                handoff. The footer is live telemetry — tokens, latency, audit events.
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/40 border border-border p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-3">
+                Authority split
+              </div>
+              <div className="space-y-2.5 text-[12.5px]">
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-info mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">5 deterministic states</span>
+                    <span className="text-muted-foreground"> — identity, fetch, validate, persist. No LLM judgment.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-warning mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">2 LLM states</span>
+                    <span className="text-muted-foreground"> — disambiguate the medication name, confirm the pharmacy.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">Hard stops</span>
+                    <span className="text-muted-foreground"> — controlled meds, DOB failure, inactive meds, repeated tool failure all escalate to a human with a typed context payload.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
-# Refill Agent — Interactive Simulator
+# Cadence — Patient Voice Agent
 
-A single-page simulator for an inbound voice agent that handles medication refills against a Salesforce-backed object model. Built as a portfolio piece for a Senior PM role in Healthcare AI.
+A single-page simulator for Cadence, an inbound patient voice agent. Use Case A handles medication refills against a Salesforce-backed object model. Built as a portfolio piece for a Senior PM role in Healthcare AI.
 
 ## What it shows
 
