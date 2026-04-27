@@ -6,10 +6,12 @@ import {
   ChevronDown,
   Phone,
   ShieldCheck,
-  Pill,
   CheckCircle2,
-  Circle,
   User,
+  Sparkles,
+  Cpu,
+  Zap,
+  ArrowRight,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -28,24 +30,6 @@ type ReasonCode =
   | "api_failure"
   | "runaway_detected";
 
-type Step = {
-  state: StateId | "ESCALATE";
-  tool: string;
-  patientLine?: string;
-  latency: number;
-  tokens: number;
-  outcome: string;
-  /** if present, fires escalation takeover after this step */
-  escalate?: {
-    reason: ReasonCode;
-    payload: Record<string, unknown>;
-    ruleCitation: string;
-    safeAck: string;
-  };
-  /** for controlled scenario: pulse this state red */
-  pulseRed?: boolean;
-};
-
 type StateId =
   | "IDENTIFY"
   | "VERIFY_DOB"
@@ -56,6 +40,22 @@ type StateId =
   | "CREATE_REFILL"
   | "COMPLETE";
 
+type Step = {
+  state: StateId | "ESCALATE";
+  tool: string;
+  patientLine?: string;
+  latency: number;
+  tokens: number;
+  outcome: string;
+  escalate?: {
+    reason: ReasonCode;
+    payload: Record<string, unknown>;
+    ruleCitation: string;
+    safeAck: string;
+  };
+  pulseRed?: boolean;
+};
+
 type Scenario = {
   id: string;
   title: string;
@@ -65,19 +65,19 @@ type Scenario = {
   steps: Step[];
 };
 
-const STATES: { id: StateId; authority: Authority }[] = [
-  { id: "IDENTIFY", authority: "DETERMINISTIC" },
-  { id: "VERIFY_DOB", authority: "DETERMINISTIC" },
-  { id: "FETCH_MEDS", authority: "DETERMINISTIC" },
-  { id: "SELECT_MED", authority: "LLM" },
-  { id: "VALIDATE_MED", authority: "DETERMINISTIC" },
-  { id: "CONFIRM_PHARMACY", authority: "LLM" },
-  { id: "CREATE_REFILL", authority: "DETERMINISTIC" },
-  { id: "COMPLETE", authority: "—" },
+const STATES: { id: StateId; authority: Authority; label: string }[] = [
+  { id: "IDENTIFY",         authority: "DETERMINISTIC", label: "Identify" },
+  { id: "VERIFY_DOB",       authority: "DETERMINISTIC", label: "Verify DOB" },
+  { id: "FETCH_MEDS",       authority: "DETERMINISTIC", label: "Fetch meds" },
+  { id: "SELECT_MED",       authority: "LLM",           label: "Select med" },
+  { id: "VALIDATE_MED",     authority: "DETERMINISTIC", label: "Validate" },
+  { id: "CONFIRM_PHARMACY", authority: "LLM",           label: "Confirm pharmacy" },
+  { id: "CREATE_REFILL",    authority: "DETERMINISTIC", label: "Create refill" },
+  { id: "COMPLETE",         authority: "—",             label: "Complete" },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Mock metric helpers — calibrated bands                             */
+/*  Mock metric helpers                                                */
 /* ------------------------------------------------------------------ */
 
 const detTok = () => 40 + Math.floor(Math.random() * 60);
@@ -85,7 +85,7 @@ const llmTok = () => 180 + Math.floor(Math.random() * 120);
 const llmLat = () => 380 + Math.floor(Math.random() * 80);
 
 /* ------------------------------------------------------------------ */
-/*  Scenarios                                                          */
+/*  Scenarios (unchanged data)                                         */
 /* ------------------------------------------------------------------ */
 
 const SCENARIOS: Scenario[] = [
@@ -93,7 +93,7 @@ const SCENARIOS: Scenario[] = [
     id: "happy",
     title: "Happy path refill",
     sticker: "BASELINE",
-    blurb: "All 8 states fire, completes green.",
+    blurb: "All 8 states fire and complete cleanly.",
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 212, tokens: detTok(),
         outcome: "200 OK · pid=p_44910",
@@ -141,13 +141,8 @@ const SCENARIOS: Scenario[] = [
         pulseRed: true,
         escalate: {
           reason: "controlled_medication",
-          payload: {
-            patient_id: "p_55021",
-            medication_id: "m_771",
-            timestamp: "2026-04-27T13:31:08Z",
-          },
-          ruleCitation:
-            "R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.",
+          payload: { patient_id: "p_55021", medication_id: "m_771", timestamp: "2026-04-27T13:31:08Z" },
+          ruleCitation: "R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.",
           safeAck: "I need to connect you with a specialist who can assist with this request.",
         } },
     ],
@@ -171,13 +166,8 @@ const SCENARIOS: Scenario[] = [
         outcome: "mismatch → ESCALATE",
         escalate: {
           reason: "dob_failure",
-          payload: {
-            patient_id: "p_30188",
-            attempt_count: 2,
-            timestamp: "2026-04-27T13:31:08Z",
-          },
-          ruleCitation:
-            "R1 · DOB must be verified before any medication field, name, or count is disclosed.",
+          payload: { patient_id: "p_30188", attempt_count: 2, timestamp: "2026-04-27T13:31:08Z" },
+          ruleCitation: "R1 · DOB must be verified before any medication field, name, or count is disclosed.",
           safeAck: "I was unable to verify your identity. Let me connect you with a specialist.",
         } },
     ],
@@ -214,8 +204,7 @@ const SCENARIOS: Scenario[] = [
             tokens_used: 742,
           },
           ruleCitation: "R4 · SELECT_MED disambiguation capped at 2 retries.",
-          safeAck:
-            "Let me connect you with a team member who can assist you directly.",
+          safeAck: "Let me connect you with a team member who can assist you directly.",
         } },
     ],
   },
@@ -247,10 +236,8 @@ const SCENARIOS: Scenario[] = [
               "Lisinopril was Active=true at FETCH_MEDS but flipped to Active=false at VALIDATE_MED",
             tokens_used: 386,
           },
-          ruleCitation:
-            "R3 · Active__c=false → block refill, escalate to a human.",
-          safeAck:
-            "Let me connect you with a team member who can assist you directly.",
+          ruleCitation: "R3 · Active__c=false → block refill, escalate to a human.",
+          safeAck: "Let me connect you with a team member who can assist you directly.",
         } },
     ],
   },
@@ -289,51 +276,76 @@ const SCENARIOS: Scenario[] = [
             response_codes: [503, 503],
             timestamp: "2026-04-27T13:31:08Z",
           },
-          ruleCitation:
-            "R7 · POST /refills must return 2xx; ≥2 failures → api_failure escalation.",
-          safeAck:
-            "I encountered an issue submitting your request. Connecting you to complete this.",
+          ruleCitation: "R7 · POST /refills must return 2xx; ≥2 failures → api_failure escalation.",
+          safeAck: "I encountered an issue submitting your request. Connecting you to complete this.",
         } },
     ],
   },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Visual helpers                                                     */
+/*  Visual helpers — light theme, semantic tokens                      */
 /* ------------------------------------------------------------------ */
 
-const statusClasses = (s: Status, pulseRed = false) => {
+const authorityToStatus = (a: Authority): Status =>
+  a === "LLM" ? "llm" : a === "DETERMINISTIC" ? "deterministic" : "complete";
+
+function stateChrome(status: Status, pulseRed = false) {
   if (pulseRed) {
-    return "bg-red-500/15 border-red-500/50 text-red-300 pulse-red";
+    return {
+      card: "bg-destructive/5 border-destructive/40 pulse-ring",
+      dot:  "bg-destructive",
+      pill: "bg-destructive text-destructive-foreground",
+      text: "text-destructive",
+    };
   }
-  switch (s) {
+  switch (status) {
     case "deterministic":
-      return "bg-blue-500/10 border-blue-500/30 text-blue-300";
+      return {
+        card: "bg-info/5 border-info/30",
+        dot:  "bg-info",
+        pill: "bg-info/10 text-info border border-info/30",
+        text: "text-info",
+      };
     case "llm":
-      return "bg-amber-500/10 border-amber-500/30 text-amber-300";
+      return {
+        card: "bg-warning/10 border-warning/40",
+        dot:  "bg-warning",
+        pill: "bg-warning/15 text-warning-foreground border border-warning/40",
+        text: "text-foreground",
+      };
     case "escalation":
-      return "bg-red-500/10 border-red-500/30 text-red-300";
+      return {
+        card: "bg-destructive/5 border-destructive/40",
+        dot:  "bg-destructive",
+        pill: "bg-destructive text-destructive-foreground",
+        text: "text-destructive",
+      };
     case "complete":
-      return "bg-emerald-500/10 border-emerald-500/30 text-emerald-300";
+      return {
+        card: "bg-success/5 border-success/30",
+        dot:  "bg-success",
+        pill: "bg-success/10 text-success border border-success/30",
+        text: "text-success",
+      };
     default:
-      return "bg-slate-800/40 border-slate-700/50 text-slate-500";
+      return {
+        card: "bg-card border-border",
+        dot:  "bg-muted-foreground/40",
+        pill: "bg-muted text-muted-foreground border border-border",
+        text: "text-muted-foreground",
+      };
   }
-};
-
-const authorityToStatus = (a: Authority): Status => {
-  if (a === "LLM") return "llm";
-  if (a === "DETERMINISTIC") return "deterministic";
-  return "complete";
-};
+}
 
 /* ------------------------------------------------------------------ */
-/*  JSON renderer — manual syntax highlight                            */
+/*  JSON renderer                                                      */
 /* ------------------------------------------------------------------ */
 
 function JsonBlock({ data }: { data: unknown }) {
   const lines = JSON.stringify(data, null, 2).split("\n");
   return (
-    <pre className="font-mono text-[11px] leading-[1.55] bg-[#070a10] border border-slate-800/80 rounded-[4px] p-3 overflow-x-auto">
+    <pre className="font-mono text-[11px] leading-[1.6] bg-foreground/[0.03] border border-border rounded-md p-3 overflow-x-auto">
       {lines.map((line, i) => (
         <div key={i}>{colorize(line)}</div>
       ))}
@@ -342,65 +354,31 @@ function JsonBlock({ data }: { data: unknown }) {
 }
 
 function colorize(line: string) {
-  // match  "key": value
   const m = line.match(/^(\s*)("?)([^":]+?)("?)(\s*:\s*)(.*)$/);
   if (!m || !line.includes(":")) {
-    return <span className="text-slate-500">{line}</span>;
+    return <span className="text-muted-foreground">{line}</span>;
   }
   const [, indent, q1, key, q2, colon, rest] = m;
   return (
     <>
-      <span className="text-slate-500">{indent}</span>
-      <span className="text-blue-300">{q1}{key}{q2}</span>
-      <span className="text-slate-500">{colon}</span>
+      <span className="text-muted-foreground">{indent}</span>
+      <span className="text-info">{q1}{key}{q2}</span>
+      <span className="text-muted-foreground">{colon}</span>
       {colorizeValue(rest)}
     </>
   );
 }
 
 function colorizeValue(v: string) {
-  // strip trailing comma
   const trailing = v.endsWith(",") ? "," : "";
   const body = trailing ? v.slice(0, -1) : v;
-  if (/^".*"$/.test(body)) {
-    return (
-      <>
-        <span className="text-emerald-300">{body}</span>
-        <span className="text-slate-500">{trailing}</span>
-      </>
-    );
-  }
-  if (/^-?\d+(\.\d+)?$/.test(body)) {
-    return (
-      <>
-        <span className="text-amber-300">{body}</span>
-        <span className="text-slate-500">{trailing}</span>
-      </>
-    );
-  }
-  if (body === "{" || body === "}" || body === "[" || body === "]") {
-    return (
-      <>
-        <span className="text-slate-400">{body}</span>
-        <span className="text-slate-500">{trailing}</span>
-      </>
-    );
-  }
-  // arrays inline like [503, 503]
-  if (/^\[.*\]$/.test(body)) {
-    return (
-      <>
-        <span className="text-amber-300">{body}</span>
-        <span className="text-slate-500">{trailing}</span>
-      </>
-    );
-  }
-  return (
-    <>
-      <span className="text-slate-300">{body}</span>
-      <span className="text-slate-500">{trailing}</span>
-    </>
-  );
+  if (/^".*"$/.test(body))
+    return (<><span className="text-success">{body}</span><span className="text-muted-foreground">{trailing}</span></>);
+  if (/^-?\d+(\.\d+)?$/.test(body))
+    return (<><span className="text-primary">{body}</span><span className="text-muted-foreground">{trailing}</span></>);
+  if (/^\[.*\]$/.test(body))
+    return (<><span className="text-primary">{body}</span><span className="text-muted-foreground">{trailing}</span></>);
+  return (<><span className="text-foreground">{body}</span><span className="text-muted-foreground">{trailing}</span></>);
 }
 
 /* ------------------------------------------------------------------ */
@@ -425,24 +403,13 @@ type StateRuntime = {
 };
 
 const RULES = [
-  "R1 · DOB before disclosure",
-  "R2 · Controlled→escalate",
-  "R3 · Inactive→block",
-  "R4 · 2-retry cap",
-  "R6 · 10-transition cap",
+  { code: "R1", text: "DOB before disclosure" },
+  { code: "R2", text: "Controlled → escalate" },
+  { code: "R3", text: "Inactive → block" },
+  { code: "R4", text: "2-retry cap" },
+  { code: "R6", text: "10-transition cap" },
+  { code: "R7", text: "API ≥2 failures → escalate" },
 ];
-
-const RULE_CITATIONS: Record<ReasonCode, string> = {
-  patient_not_found:
-    "R0 · Patient lookup returned null → escalate before any further state.",
-  dob_failure: "R1 · DOB before disclosure.",
-  controlled_medication:
-    "R2 · Controlled__c=true escalates BEFORE Active__c check and BEFORE any LLM output.",
-  no_active_medications: "R3 · Active__c=false → block refill, escalate.",
-  disambiguation_failed: "R4 · SELECT_MED disambiguation capped at 2 retries.",
-  api_failure: "R7 · ≥2 failed POST /refills → api_failure escalation.",
-  runaway_detected: "R6 · session cap 10 transitions → runaway_detected.",
-};
 
 const Index = () => {
   const [scenarioId, setScenarioId] = useState<string>("happy");
@@ -464,9 +431,7 @@ const Index = () => {
     [scenarioId],
   );
 
-  // playback
   useEffect(() => {
-    // reset
     timeoutsRef.current.forEach((t) => clearTimeout(t));
     timeoutsRef.current = [];
     setRuntime(
@@ -485,15 +450,11 @@ const Index = () => {
     scenario.steps.forEach((step, i) => {
       const t = window.setTimeout(() => {
         const isEscalateRow = !!step.escalate;
-        // status logic
         setRuntime((prev) => {
           const next = { ...prev };
-          // turn previous deterministic/llm states "complete" if they completed
           (Object.keys(next) as StateId[]).forEach((k) => {
             if (next[k].status === "deterministic" || next[k].status === "llm") {
-              if (k !== step.state) {
-                next[k] = { ...next[k], status: "complete" };
-              }
+              if (k !== step.state) next[k] = { ...next[k], status: "complete" };
             }
           });
           if (step.state !== "ESCALATE") {
@@ -521,35 +482,18 @@ const Index = () => {
         }
         setActiveIdx(i);
 
-        if (step.patientLine) {
-          setPatientLines((prev) => [...prev, step.patientLine!]);
-        }
+        if (step.patientLine) setPatientLines((prev) => [...prev, step.patientLine!]);
         setTokensTotal((p) => p + step.tokens);
         setLatencyTotal((p) => p + step.latency);
         setAudit((prev) => [
           ...prev,
-          {
-            idx: prev.length + 1,
-            state: step.state,
-            tool: step.tool,
-            latency: step.latency || null,
-            tokens: step.tokens || null,
-            outcome: step.outcome,
-          },
+          { idx: prev.length + 1, state: step.state, tool: step.tool, latency: step.latency || null, tokens: step.tokens || null, outcome: step.outcome },
         ]);
 
         if (step.escalate) {
-          // append synthetic escalate audit row
           setAudit((prev) => [
             ...prev,
-            {
-              idx: prev.length + 1,
-              state: "—",
-              tool: "escalate_to_human",
-              latency: null,
-              tokens: null,
-              outcome: step.escalate!.reason.toUpperCase(),
-            },
+            { idx: prev.length + 1, state: "—", tool: "escalate_to_human", latency: null, tokens: null, outcome: step.escalate!.reason.toUpperCase() },
           ]);
           setEscalation(step.escalate);
         }
@@ -566,231 +510,210 @@ const Index = () => {
   const latencyRed = latencyTotal > 2000;
 
   return (
-    <div
-      className="h-screen w-screen overflow-hidden text-slate-200 font-[Inter] text-[12px]"
-      style={{ background: "#0a0e14" }}
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        .font-\\[Inter\\] { font-family: 'Inter', system-ui, sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-        @keyframes pulseRed {
-          0%   { box-shadow: 0 0 0 0   rgba(239,68,68,0.45); }
-          50%  { box-shadow: 0 0 0 8px rgba(239,68,68,0);    }
-          100% { box-shadow: 0 0 0 0   rgba(239,68,68,0.45); }
-        }
-        .pulse-red { animation: pulseRed 1.4s ease-out infinite; }
-        @keyframes dotPulse {
-          0%,100% { opacity: 1; }
-          50% { opacity: 0.35; }
-        }
-        .dot-pulse { animation: dotPulse 1.6s ease-in-out infinite; }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(-6px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .slide-in { animation: slideIn 0.25s ease-out; }
-        @keyframes drawerUp {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0); }
-        }
-        .drawer-up { animation: drawerUp 0.2s ease-out; }
-        .center-grid {
-          background-image:
-            linear-gradient(to right,  rgba(148,163,184,0.04) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(148,163,184,0.04) 1px, transparent 1px);
-          background-size: 32px 32px;
-        }
-        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-      `}</style>
-
-      <div className="grid h-full" style={{ gridTemplateRows: "56px 1fr 44px" }}>
-        {/* HEADER */}
-        <header
-          className="flex items-center justify-between px-4 border-b border-slate-800/80"
-          style={{ background: "#0d121a" }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="h-[18px] w-[18px] rounded-[3px]"
-              style={{
-                background:
-                  "linear-gradient(135deg,#3b82f6 0%,#8b5cf6 50%,#ef4444 100%)",
-              }}
-            />
-            <div className="flex items-baseline gap-2">
-              <span className="text-slate-200 font-medium text-[13px]">
+    <div className="min-h-screen bg-warm-wash text-foreground">
+      {/* ============================ HEADER ============================ */}
+      <header className="sticky top-0 z-30 backdrop-blur-md bg-background/60 border-b border-border/60">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-card shrink-0">
+              <Sparkles size={18} strokeWidth={2.4} />
+            </div>
+            <div className="min-w-0">
+              <div className="font-display font-bold text-[15px] sm:text-base text-foreground leading-tight truncate">
                 Refill Agent
-              </span>
-              <span className="font-mono text-[10px] text-slate-500 tracking-widest uppercase">
-                Use Case A · Voice Inbound · v0.4
-              </span>
+              </div>
+              <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-muted-foreground truncate">
+                Voice Inbound · Use Case A · v0.4
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-5 font-mono text-[9px] tracking-widest uppercase text-slate-400">
+          <div className="hidden md:flex items-center gap-5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 dot-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-success dot-pulse" />
               session live
             </span>
-            <span className="text-slate-500">hmac ttl 600s</span>
-            <span className="text-slate-500">phi-redacted log</span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck size={12} className="text-success" />
+              PHI-redacted
+            </span>
+            <span>HMAC TTL 600s</span>
           </div>
-        </header>
-
-        {/* MAIN GRID */}
-        <main
-          className="grid h-full overflow-hidden"
-          style={{ gridTemplateColumns: "260px 1fr 360px" }}
-        >
-          {/* LEFT — SCENARIOS */}
-          <aside
-            className="border-r border-slate-800/80 flex flex-col overflow-hidden"
-            style={{ background: "#0d121a" }}
+          <a
+            href="#scenarios"
+            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-colors px-4 py-2 text-sm font-medium shadow-card"
           >
-            <div className="px-4 pt-4 pb-3">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500">
-                Scenarios
-              </div>
+            Try a scenario
+            <ArrowRight size={14} />
+          </a>
+        </div>
+      </header>
+
+      {/* ============================ HERO ============================ */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-6">
+        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-end">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-card/70 backdrop-blur border border-border px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-5">
+              <Cpu size={11} className="text-primary" />
+              Healthcare AI · Voice agent simulator
             </div>
-            <div className="flex-1 overflow-y-auto scrollbar-thin px-3 pb-3 space-y-1.5">
-              {SCENARIOS.map((s) => {
-                const active = s.id === scenarioId;
-                const tint = active && s.accentRed;
-                return (
-                  <button
+            <h1 className="font-display font-bold text-[40px] sm:text-[56px] lg:text-[68px] leading-[1.02] tracking-tight text-foreground">
+              Deterministic where it must be.
+              <br />
+              <span className="text-primary">Smart where it can be.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              An inbound voice agent for medication refills. Watch six real scenarios fire through an
+              8-state machine — Salesforce-backed, scoped LLM, audited escalations.
+            </p>
+          </div>
+          <div className="hidden lg:flex flex-col gap-3 text-sm">
+            <HeroStat label="Hard rules enforced" value="6" sub="R1 – R7" />
+            <HeroStat label="States visible" value="8 / 8" sub="no pagination, no hiding" />
+            <HeroStat label="Escalation reasons" value="7" sub="every failure has a code" />
+          </div>
+        </div>
+      </section>
+
+      {/* ============================ MAIN GRID ============================ */}
+      <main
+        id="scenarios"
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-32"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6">
+          {/* ============== LEFT — SCENARIOS ============== */}
+          <aside className="lg:sticky lg:top-20 lg:self-start">
+            <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  Scenarios
+                </div>
+                <div className="font-display font-semibold text-foreground text-base mt-1">
+                  Pick one · auto-plays
+                </div>
+              </div>
+
+              {/* Mobile: horizontal scroll. Desktop: stacked. */}
+              <div className="lg:hidden flex gap-2 overflow-x-auto p-3 scrollbar-thin">
+                {SCENARIOS.map((s) => (
+                  <ScenarioPill
                     key={s.id}
+                    scenario={s}
+                    active={s.id === scenarioId}
                     onClick={() => setScenarioId(s.id)}
-                    className={[
-                      "w-full text-left rounded-[4px] border px-3 py-2.5 transition-colors",
-                      active
-                        ? tint
-                          ? "border-red-500/40 bg-red-500/5"
-                          : "border-slate-700 bg-slate-800/50"
-                        : "border-slate-800/80 bg-slate-900/30 hover:bg-slate-800/40 hover:border-slate-700/80",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="text-[12px] font-medium text-slate-200 leading-tight">
-                        {s.title}
-                      </div>
-                      <span
-                        className={[
-                          "font-mono text-[8px] tracking-widest uppercase px-1.5 py-0.5 rounded-[2px] border whitespace-nowrap",
-                          tint
-                            ? "border-red-500/40 text-red-300 bg-red-500/10"
-                            : "border-slate-700/70 text-slate-400 bg-slate-900/60",
-                        ].join(" ")}
-                      >
-                        {s.sticker}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate-500 leading-snug">
-                      {s.blurb}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="px-4 py-3 border-t border-slate-800/80">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-slate-600">
-                Object model
+                  />
+                ))}
               </div>
-              <div className="mt-1.5 font-mono text-[10px] text-slate-500 leading-relaxed">
-                Patient__c · Medication__c<br />
-                <span className="text-slate-600">1:many · Salesforce backed</span>
+
+              <div className="hidden lg:flex flex-col gap-2 p-3">
+                {SCENARIOS.map((s) => (
+                  <ScenarioCard
+                    key={s.id}
+                    scenario={s}
+                    active={s.id === scenarioId}
+                    onClick={() => setScenarioId(s.id)}
+                  />
+                ))}
+              </div>
+
+              <div className="px-5 py-4 border-t border-border bg-secondary/40">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  Object model
+                </div>
+                <div className="mt-1 font-mono text-[11px] text-foreground/80 leading-relaxed">
+                  Patient__c · Medication__c
+                  <div className="text-muted-foreground mt-0.5">1:many · Salesforce backed</div>
+                </div>
               </div>
             </div>
           </aside>
 
-          {/* CENTER — STATE MACHINE */}
-          <section
-            className="overflow-y-auto scrollbar-thin center-grid"
-            style={{ background: "#0a0e14" }}
-          >
-            <div className="px-6 pt-5 pb-4 flex items-center justify-between">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500">
-                State Machine · 8 sequential
+          {/* ============== CENTER — STATE MACHINE ============== */}
+          <section className="rounded-2xl bg-card border border-border shadow-card-lg overflow-hidden">
+            <div className="px-5 sm:px-6 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  State machine
+                </div>
+                <div className="font-display font-semibold text-foreground text-base mt-1">
+                  {scenario.title}
+                </div>
               </div>
-              <div className="flex items-center gap-3 font-mono text-[9px] tracking-widest uppercase text-slate-500">
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-sm bg-blue-400/70" />
-                  deterministic
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-sm bg-amber-400/70" />
-                  llm
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-sm bg-red-400/70" />
-                  escalation
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-sm bg-emerald-400/70" />
-                  complete
-                </span>
+              <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                <Legend dot="bg-info" label="deterministic" />
+                <Legend dot="bg-warning" label="llm" />
+                <Legend dot="bg-success" label="complete" />
+                <Legend dot="bg-destructive" label="escalation" />
               </div>
             </div>
 
-            <div className="px-6 space-y-1.5">
+            <div className="p-3 sm:p-4 space-y-2">
               {STATES.map((s, i) => {
                 const r = runtime[s.id];
-                const status = r.status;
-                const cls = statusClasses(status, r.pulseRed);
+                const chrome = stateChrome(r.status, r.pulseRed);
                 const isActive =
-                  activeIdx >= 0 &&
-                  scenario.steps[activeIdx]?.state === s.id;
+                  activeIdx >= 0 && scenario.steps[activeIdx]?.state === s.id;
+                const isLLM = s.authority === "LLM";
                 return (
                   <div
                     key={s.id}
                     className={[
-                      "border rounded-[4px] px-3 py-2.5 flex items-center gap-3",
-                      cls,
-                      isActive ? "slide-in" : "",
+                      "relative border rounded-xl px-3 sm:px-4 py-3 transition-all duration-300",
+                      chrome.card,
+                      isActive ? "slide-in shadow-card" : "",
                     ].join(" ")}
                   >
-                    <div className="font-mono text-[10px] text-slate-500 w-6">
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
-                    <div className="font-mono text-[11px] tracking-widest uppercase font-medium w-[150px]">
-                      {s.id}
-                    </div>
-                    <div className="font-mono text-[8px] tracking-widest uppercase text-slate-500 w-[100px]">
-                      {s.authority}
-                    </div>
-                    <div className="font-mono text-[10px] text-slate-400 flex-1 truncate">
-                      {r.tool && r.tool !== "—" ? r.tool : ""}
-                    </div>
-                    <div className="font-mono text-[10px] text-slate-400 w-[60px] text-right">
-                      {r.latency ? `${r.latency}ms` : ""}
-                    </div>
-                    <div className="font-mono text-[10px] text-slate-400 w-[50px] text-right">
-                      {r.tokens ? `${r.tokens}t` : ""}
-                    </div>
-                    <div
-                      className={[
-                        "font-mono text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-[2px] border w-[100px] text-center",
-                        status === "idle"
-                          ? "border-slate-700/60 text-slate-600"
-                          : status === "escalation"
-                            ? "border-red-500/40 text-red-300 bg-red-500/10"
-                            : status === "complete"
-                              ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
-                              : status === "llm"
-                                ? "border-amber-500/40 text-amber-300 bg-amber-500/10"
-                                : "border-blue-500/40 text-blue-300 bg-blue-500/10",
-                      ].join(" ")}
-                    >
-                      {status === "idle"
-                        ? "pending"
-                        : status === "escalation"
-                          ? "ESCALATE"
-                          : status === "complete"
-                            ? "complete"
-                            : status === "llm"
-                              ? "running"
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {/* number + dot */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono text-[10px] text-muted-foreground w-5 text-right">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className={["h-2 w-2 rounded-full", chrome.dot].join(" ")} />
+                      </div>
+
+                      {/* label */}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-semibold text-foreground text-[14px] truncate">
+                          {s.label}
+                        </div>
+                        <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                          {s.id} · {isLLM ? (
+                            <span className="text-warning-foreground">scoped LLM</span>
+                          ) : s.authority === "DETERMINISTIC" ? (
+                            <span className="text-info">deterministic</span>
+                          ) : (
+                            "—"
+                          )}
+                        </div>
+                      </div>
+
+                      {/* tool / metrics */}
+                      <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[110px]">
+                        <div className="font-mono text-[11px] text-foreground/70 truncate max-w-[180px]">
+                          {r.tool && r.tool !== "—" ? r.tool : ""}
+                        </div>
+                        <div className="font-mono text-[10px] text-muted-foreground">
+                          {r.latency ? `${r.latency}ms` : ""} {r.tokens ? `· ${r.tokens}t` : ""}
+                        </div>
+                      </div>
+
+                      {/* status pill */}
+                      <span
+                        className={[
+                          "font-mono text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 min-w-[88px] text-center",
+                          r.status === "idle"
+                            ? "bg-muted text-muted-foreground border border-border"
+                            : chrome.pill,
+                        ].join(" ")}
+                      >
+                        {r.status === "idle"
+                          ? "pending"
+                          : r.status === "escalation"
+                            ? "ESCALATE"
+                            : r.status === "complete"
+                              ? "complete"
                               : "running"}
+                      </span>
                     </div>
                   </div>
                 );
@@ -798,230 +721,322 @@ const Index = () => {
             </div>
 
             {/* Hard Rules Ribbon */}
-            <div className="px-6 pt-4 pb-6 mt-3">
-              <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-2">
-                Hard Rules · always enforced
+            <div className="px-5 sm:px-6 pt-2 pb-5 border-t border-border bg-secondary/30">
+              <div className="flex items-center gap-2 mb-3 mt-3">
+                <ShieldCheck size={14} className="text-primary" />
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  Hard rules · always enforced
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {RULES.map((r) => (
                   <span
-                    key={r}
-                    className="font-mono text-[10px] text-slate-400 border border-slate-800/80 bg-slate-900/40 px-2 py-1 rounded-[3px]"
+                    key={r.code}
+                    className="inline-flex items-center gap-1.5 font-mono text-[11px] text-foreground/80 bg-card border border-border px-2.5 py-1 rounded-full shadow-card"
                   >
-                    {r}
+                    <span className="text-primary font-semibold">{r.code}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span>{r.text}</span>
                   </span>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* RIGHT — PATIENT VIEW / HANDOFF */}
-          <aside
-            className="border-l border-slate-800/80 overflow-y-auto scrollbar-thin"
-            style={{ background: "#0b1018" }}
-          >
+          {/* ============== RIGHT — PATIENT / HANDOFF ============== */}
+          <aside className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
             {!escalation ? (
-              <div className="p-4">
-                <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-3 flex items-center gap-2">
-                  <Phone size={10} className="text-slate-500" />
-                  Patient View
+              <div>
+                <div className="px-5 py-4 border-b border-border bg-secondary/40">
+                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    <Phone size={11} className="text-success" />
+                    Patient view · what they hear
+                  </div>
+                  <div className="font-display font-semibold text-foreground text-base mt-1">
+                    Live transcript
+                  </div>
                 </div>
-                <div className="space-y-2">
+                <div className="p-5 space-y-3 min-h-[280px] max-h-[520px] overflow-y-auto scrollbar-thin">
                   {patientLines.length === 0 && (
-                    <div className="font-mono text-[10px] text-slate-600 italic">
+                    <div className="font-mono text-[11px] text-muted-foreground italic flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 dot-pulse" />
                       awaiting inbound call…
                     </div>
                   )}
                   {patientLines.map((line, i) => (
                     <div
                       key={i}
-                      className="border-l-2 border-slate-700/70 pl-3 py-1 italic text-slate-400 text-[12px] leading-relaxed slide-in"
+                      className="rounded-xl bg-secondary/60 border border-border px-4 py-3 slide-in"
                     >
-                      {line}
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
+                        Agent
+                      </div>
+                      <div className="text-[14px] text-foreground leading-relaxed">
+                        “{line}”
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div>
-                <div className="bg-red-500/10 border-b border-red-500/30 px-4 py-3 flex items-center gap-2">
-                  <AlertTriangle size={14} className="text-red-300" />
-                  <div className="font-mono text-[10px] tracking-widest uppercase text-red-300">
-                    EscalationContext received
+              <div className="slide-in">
+                <div className="px-5 py-4 border-b border-destructive/30 bg-destructive/5 flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-destructive" />
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-destructive">
+                    Escalation context received
                   </div>
                 </div>
 
-                <div className="p-4 space-y-4">
+                <div className="p-5 space-y-5">
                   <div>
-                    <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Said to patient
                     </div>
-                    <div className="border-l-2 border-slate-700/70 pl-3 italic text-slate-400 text-[12px] leading-relaxed">
-                      {escalation.safeAck}
+                    <div className="rounded-xl bg-secondary/60 border border-border px-4 py-3 text-[14px] text-foreground leading-relaxed">
+                      “{escalation.safeAck}”
                     </div>
                   </div>
 
                   <div>
-                    <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Reason code
                     </div>
-                    <span className="inline-block font-mono text-[11px] text-red-300 bg-red-500/10 border border-red-500/40 px-2.5 py-1 rounded-full">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-destructive text-destructive-foreground px-3 py-1.5 rounded-full font-semibold uppercase tracking-wider">
+                      <AlertTriangle size={11} />
                       {escalation.reason}
                     </span>
                   </div>
 
                   <div>
-                    <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Context payload
                     </div>
                     <JsonBlock data={escalation.payload} />
                   </div>
 
                   <div>
-                    <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Why
                     </div>
-                    <div className="border border-slate-800/80 bg-slate-900/40 rounded-[4px] p-3 text-[11px] text-slate-400 leading-relaxed">
-                      <span className="text-slate-200">{escalation.ruleCitation}</span>
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-[12px] text-foreground leading-relaxed">
+                      <span className="font-semibold text-primary">{escalation.ruleCitation.split(" · ")[0]}</span>
+                      <span className="text-muted-foreground"> · </span>
+                      {escalation.ruleCitation.split(" · ").slice(1).join(" · ")}
                     </div>
                   </div>
 
                   <div>
-                    <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mb-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Receiving agent
                     </div>
-                    <div className="flex items-center gap-3 border border-slate-800/80 rounded-[4px] p-3 bg-slate-900/30">
-                      <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
-                        <User size={14} className="text-slate-400" />
+                    <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                        <User size={15} className="text-primary" />
                       </div>
-                      <div className="flex-1">
-                        <div className="text-[12px] text-slate-200">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] text-foreground font-medium">
                           Specialist · queue 02
                         </div>
-                        <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500 mt-0.5">
-                          context received · session ownership transferred
+                        <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 truncate">
+                          context received · ownership transferred
                         </div>
                       </div>
+                      <CheckCircle2 size={16} className="text-success shrink-0" />
                     </div>
                   </div>
                 </div>
               </div>
             )}
           </aside>
-        </main>
+        </div>
 
-        {/* FOOTER */}
-        <footer
-          className="border-t border-slate-800/80 flex items-center px-4 gap-6 relative"
-          style={{ background: "#0d121a" }}
-        >
-          <FooterCell label="STATES" value={`${statesVisited}/8`} />
-          <FooterCell label="TOKENS" value={String(tokensTotal)} />
-          <FooterCell
-            label="LATENCY"
+        {/* ============== METRICS / RAILS ============== */}
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <MetricCard label="States visited" value={`${statesVisited}/8`} icon={<Activity size={14} />} />
+          <MetricCard label="Tokens" value={String(tokensTotal)} icon={<Cpu size={14} />} />
+          <MetricCard
+            label="Cumulative latency"
             value={`${latencyTotal}ms`}
-            valueClass={latencyRed ? "text-red-400" : "text-slate-200"}
+            valueClass={latencyRed ? "text-destructive" : "text-foreground"}
+            icon={<Zap size={14} className={latencyRed ? "text-destructive" : "text-primary"} />}
           />
-          <button
-            onClick={() => setDrawerOpen((v) => !v)}
-            className="flex items-center gap-2 ml-auto font-mono text-[10px] tracking-widest uppercase text-slate-400 hover:text-slate-200"
-          >
-            <Activity size={11} />
-            <span className="text-slate-500">AUDIT</span>
-            <span className="text-slate-200">{audit.length}</span>
-            <span className="text-slate-500">events</span>
-            {drawerOpen ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
-          </button>
-        </footer>
+          <MetricCard label="Audit events" value={String(audit.length)} icon={<ShieldCheck size={14} />} />
+        </div>
 
-        {/* AUDIT DRAWER */}
-        {drawerOpen && (
-          <div
-            className="absolute left-0 right-0 bottom-[44px] border-t border-slate-800/80 drawer-up z-20"
-            style={{ height: "200px", background: "#070a10" }}
-          >
-            <div className="h-full flex flex-col">
-              <div className="px-4 py-2 border-b border-slate-800/80 flex items-center justify-between">
-                <div className="font-mono text-[9px] tracking-widest uppercase text-slate-500">
-                  Audit Log · per-step trace
-                </div>
-                <div className="font-mono text-[9px] tracking-widest uppercase text-slate-600">
-                  phi-redacted · inputs hashed · session sess_a91c33
-                </div>
+        {/* ============== AUDIT TOGGLE ============== */}
+        <button
+          onClick={() => setDrawerOpen((v) => !v)}
+          className="mt-4 w-full rounded-2xl bg-card border border-border shadow-card hover:shadow-card-lg transition-shadow px-5 py-4 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-foreground text-background flex items-center justify-center shrink-0">
+              <Activity size={16} />
+            </div>
+            <div className="text-left min-w-0">
+              <div className="font-display font-semibold text-foreground text-[14px]">
+                Audit log
               </div>
-              <div className="flex-1 overflow-y-auto scrollbar-thin">
-                <table className="w-full font-mono text-[10px]">
-                  <thead className="sticky top-0" style={{ background: "#070a10" }}>
-                    <tr className="text-slate-600 tracking-widest uppercase text-[9px]">
-                      <th className="text-left py-1.5 px-4 w-[40px]">#</th>
-                      <th className="text-left py-1.5 px-2 w-[140px]">State</th>
-                      <th className="text-left py-1.5 px-2 w-[200px]">Tool</th>
-                      <th className="text-right py-1.5 px-2 w-[80px]">Latency</th>
-                      <th className="text-right py-1.5 px-2 w-[70px]">Tokens</th>
-                      <th className="text-left py-1.5 px-2">Outcome</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {audit.map((row) => {
-                      const isEsc = row.tool === "escalate_to_human";
-                      return (
-                        <tr
-                          key={row.idx}
-                          className="border-t border-slate-900/80 hover:bg-slate-900/40"
-                        >
-                          <td className="py-1 px-4 text-slate-600">
-                            {String(row.idx).padStart(2, "0")}
-                          </td>
-                          <td className="py-1 px-2 text-slate-300">{row.state}</td>
-                          <td className="py-1 px-2 text-slate-400">{row.tool}</td>
-                          <td className="py-1 px-2 text-right text-slate-400">
-                            {row.latency ? `${row.latency}ms` : "—"}
-                          </td>
-                          <td className="py-1 px-2 text-right text-slate-400">
-                            {row.tokens ?? "—"}
-                          </td>
-                          <td
-                            className={
-                              "py-1 px-2 " +
-                              (isEsc ? "text-red-300" : "text-slate-400")
-                            }
-                          >
-                            {row.outcome}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {audit.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-6 text-center text-slate-600">
-                          no events yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="font-mono text-[11px] text-muted-foreground truncate">
+                {audit.length} events · PHI-redacted · session sess_a91c33
               </div>
             </div>
           </div>
+          <div className="flex items-center gap-2 text-muted-foreground text-[12px] font-mono uppercase tracking-wider shrink-0">
+            {drawerOpen ? "Hide" : "Show"}
+            {drawerOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </div>
+        </button>
+
+        {drawerOpen && (
+          <div className="mt-3 rounded-2xl bg-card border border-border shadow-card overflow-hidden drawer-up">
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-[11px] min-w-[640px]">
+                <thead className="bg-secondary/60">
+                  <tr className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                    <th className="text-left py-2.5 px-4 w-[40px]">#</th>
+                    <th className="text-left py-2.5 px-2 w-[140px]">State</th>
+                    <th className="text-left py-2.5 px-2 w-[180px]">Tool</th>
+                    <th className="text-right py-2.5 px-2 w-[80px]">Latency</th>
+                    <th className="text-right py-2.5 px-2 w-[70px]">Tokens</th>
+                    <th className="text-left py-2.5 px-2">Outcome</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {audit.map((row) => {
+                    const isEsc = row.tool === "escalate_to_human";
+                    return (
+                      <tr key={row.idx} className="border-t border-border hover:bg-secondary/30">
+                        <td className="py-2 px-4 text-muted-foreground">{String(row.idx).padStart(2, "0")}</td>
+                        <td className="py-2 px-2 text-foreground">{row.state}</td>
+                        <td className="py-2 px-2 text-foreground/80">{row.tool}</td>
+                        <td className="py-2 px-2 text-right text-foreground/80">{row.latency ? `${row.latency}ms` : "—"}</td>
+                        <td className="py-2 px-2 text-right text-foreground/80">{row.tokens ?? "—"}</td>
+                        <td className={"py-2 px-2 " + (isEsc ? "text-destructive font-semibold" : "text-foreground/80")}>
+                          {row.outcome}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {audit.length === 0 && (
+                    <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">no events yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
-      </div>
+      </main>
+
+      <footer className="border-t border-border/60 bg-background/40 backdrop-blur">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-[12px] text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div>
+            Portfolio piece · Senior PM, Healthcare AI · 2026
+          </div>
+          <div className="font-mono text-[11px] uppercase tracking-wider">
+            Built for the 90-second read · light · audited · scoped LLM
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
-function FooterCell({
-  label,
-  value,
-  valueClass = "text-slate-200",
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-}) {
+/* ------------------------------------------------------------------ */
+/*  Sub-components                                                     */
+/* ------------------------------------------------------------------ */
+
+function HeroStat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest uppercase">
-      <span className="text-slate-500">{label}</span>
-      <span className={valueClass}>{value}</span>
+    <div className="rounded-2xl bg-card/80 backdrop-blur border border-border shadow-card px-5 py-4">
+      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="font-display font-bold text-3xl text-foreground mt-1">{value}</div>
+      <div className="font-mono text-[11px] text-muted-foreground mt-0.5">{sub}</div>
+    </div>
+  );
+}
+
+function ScenarioCard({
+  scenario, active, onClick,
+}: { scenario: Scenario; active: boolean; onClick: () => void }) {
+  const danger = scenario.accentRed;
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "w-full text-left rounded-xl border px-4 py-3 transition-all",
+        active
+          ? danger
+            ? "border-destructive/40 bg-destructive/5 shadow-card"
+            : "border-primary/40 bg-primary/5 shadow-card"
+          : "border-border bg-card hover:border-foreground/20 hover:bg-secondary/40",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="font-display font-semibold text-[13px] text-foreground leading-tight">
+          {scenario.title}
+        </div>
+        <span
+          className={[
+            "font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0",
+            danger
+              ? "bg-destructive/10 text-destructive border border-destructive/30"
+              : active
+                ? "bg-primary/10 text-primary border border-primary/30"
+                : "bg-secondary text-muted-foreground border border-border",
+          ].join(" ")}
+        >
+          {scenario.sticker}
+        </span>
+      </div>
+      <div className="mt-1 text-[11px] text-muted-foreground leading-snug">
+        {scenario.blurb}
+      </div>
+    </button>
+  );
+}
+
+function ScenarioPill({
+  scenario, active, onClick,
+}: { scenario: Scenario; active: boolean; onClick: () => void }) {
+  const danger = scenario.accentRed;
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "shrink-0 rounded-full border px-3.5 py-2 text-[12px] font-medium transition-all whitespace-nowrap",
+        active
+          ? danger
+            ? "border-destructive bg-destructive text-destructive-foreground"
+            : "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-foreground hover:border-foreground/30",
+      ].join(" ")}
+    >
+      {scenario.title}
+    </button>
+  );
+}
+
+function Legend({ dot, label }: { dot: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={["h-2 w-2 rounded-full", dot].join(" ")} />
+      {label}
+    </span>
+  );
+}
+
+function MetricCard({
+  label, value, valueClass = "text-foreground", icon,
+}: { label: string; value: string; valueClass?: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-card border border-border shadow-card p-4">
+      <div className="flex items-center justify-between text-muted-foreground">
+        <span className="text-[10px] font-mono uppercase tracking-widest">{label}</span>
+        <span className="text-primary">{icon}</span>
+      </div>
+      <div className={["font-display font-bold text-2xl mt-1.5", valueClass].join(" ")}>
+        {value}
+      </div>
     </div>
   );
 }
