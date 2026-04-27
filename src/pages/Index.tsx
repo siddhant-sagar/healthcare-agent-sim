@@ -1010,17 +1010,47 @@ const Index = () => {
       </main>
 
       <footer className="border-t border-border/60 bg-background/40 backdrop-blur">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-[12px] text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            Portfolio piece · Senior PM, Healthcare AI · 2026
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center text-center gap-5">
+          {/* Avatar + handle */}
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-full bg-foreground text-background flex items-center justify-center font-display font-bold text-[14px] shadow-card">
+              S
+            </div>
+            <div className="font-display font-semibold text-foreground text-[15px]">
+              siddhantsagar
+            </div>
           </div>
-          <div className="font-mono text-[11px] uppercase tracking-wider sm:text-right">
-            Built for the 90-second read · light · audited · scoped LLM
+
+          {/* Byline */}
+          <div className="text-[13px] text-muted-foreground">
+            Built by <span className="text-foreground font-semibold">Siddhant Sagar</span> · Senior PM Candidate · Healthcare AI Interview Prototype
           </div>
-        </div>
-        <div className="border-t border-border/60">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3 text-[11px] text-muted-foreground">
-            Independent portfolio submission for a Senior PM application. Not affiliated with, endorsed by, or associated with Level AI in any way. All scenarios, data, and product names are illustrative.
+
+          {/* Pill buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <a
+              href="#scenarios"
+              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+            >
+              Explore the agent
+            </a>
+            <a
+              href="#scenarios"
+              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+            >
+              View state machine
+            </a>
+            <a
+              href="mailto:hello@example.com"
+              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+            >
+              Discuss architecture
+            </a>
+          </div>
+
+          {/* Disclaimer */}
+          <div className="text-[11.5px] text-muted-foreground max-w-2xl">
+            © 2026 · Prototype for portfolio purposes only · Not affiliated with, endorsed by, or associated with Level AI
           </div>
         </div>
       </footer>
