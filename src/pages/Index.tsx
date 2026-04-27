@@ -676,7 +676,12 @@ const Index = () => {
 
                       {/* label */}
                       <div className="min-w-0 flex-1">
-                        <div className="font-display font-semibold text-foreground text-[14px] truncate">
+                        <div
+                          className={[
+                            "font-display font-semibold text-foreground text-[14px] truncate",
+                            r.outcome?.startsWith("BYPASSED") ? "line-through opacity-60" : "",
+                          ].join(" ")}
+                        >
                           {s.label}
                         </div>
                         <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground truncate">
@@ -711,11 +716,13 @@ const Index = () => {
                       >
                         {r.status === "idle"
                           ? "pending"
-                          : r.status === "escalation"
-                            ? "ESCALATE"
-                            : r.status === "complete"
-                              ? "complete"
-                              : "running"}
+                          : r.outcome?.startsWith("BYPASSED")
+                            ? "BYPASSED"
+                            : r.status === "escalation"
+                              ? "ESCALATE"
+                              : r.status === "complete"
+                                ? "complete"
+                                : "running"}
                       </span>
                     </div>
                   </div>
