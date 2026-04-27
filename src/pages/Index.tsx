@@ -788,9 +788,9 @@ const Index = () => {
           </section>
 
           {/* ============== RIGHT - PATIENT / HANDOFF ============== */}
-          <aside className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
+          <aside className="rounded-2xl bg-card border border-border shadow-card overflow-hidden flex flex-col">
             {!escalation ? (
-              <div>
+              <div className="flex flex-col flex-1 min-h-0">
                 <div className="px-5 py-4 border-b border-border bg-secondary/40">
                   <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                     <Phone size={11} className="text-success" />
@@ -800,7 +800,7 @@ const Index = () => {
                     Live transcript
                   </div>
                 </div>
-                <div className="p-5 space-y-3 min-h-[280px] max-h-[520px] overflow-y-auto scrollbar-thin">
+                <div className="p-5 space-y-3 flex-1 min-h-[320px] lg:min-h-0 overflow-y-auto scrollbar-thin">
                   {patientLines.length === 0 && (
                     <div className="font-mono text-[11px] text-muted-foreground italic flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 dot-pulse" />
@@ -813,7 +813,7 @@ const Index = () => {
                       className="rounded-xl bg-secondary/60 border border-border px-4 py-3 slide-in"
                     >
                       <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                        Agent
+                        Agent · turn {String(i + 1).padStart(2, "0")}
                       </div>
                       <div className="text-[14px] text-foreground leading-relaxed">
                         “{line}”
@@ -821,9 +821,28 @@ const Index = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* Footer rail - mirrors LEFT (Object model) and CENTER (Hard rules) */}
+                <div className="px-5 py-4 border-t border-border bg-secondary/40 mt-auto">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        Channel
+                      </div>
+                      <div className="mt-1 font-mono text-[11px] text-foreground/80 leading-relaxed truncate">
+                        Voice · PSTN inbound
+                        <div className="text-muted-foreground mt-0.5">sess_a91c33 · {patientLines.length} turn{patientLines.length === 1 ? "" : "s"}</div>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-success bg-success/10 border border-success/30 px-2.5 py-1 rounded-full shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success dot-pulse" />
+                      agent owns call
+                    </span>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="slide-in">
+              <div className="slide-in flex flex-col flex-1 min-h-0">
                 <div className="px-5 py-4 border-b border-destructive/30 bg-destructive/5 flex items-center gap-2">
                   <AlertTriangle size={14} className="text-destructive" />
                   <div className="font-mono text-[10px] uppercase tracking-widest text-destructive">
@@ -831,7 +850,7 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div className="p-5 space-y-5">
+                <div className="p-5 space-y-5 flex-1 overflow-y-auto scrollbar-thin">
                   <div>
                     <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
                       Said to patient
@@ -887,6 +906,25 @@ const Index = () => {
                       </div>
                       <CheckCircle2 size={16} className="text-success shrink-0" />
                     </div>
+                  </div>
+                </div>
+
+                {/* Footer rail - mirrors LEFT/CENTER, signals ownership change */}
+                <div className="px-5 py-4 border-t border-border bg-secondary/40 mt-auto">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        Channel
+                      </div>
+                      <div className="mt-1 font-mono text-[11px] text-foreground/80 leading-relaxed truncate">
+                        Voice · PSTN inbound
+                        <div className="text-muted-foreground mt-0.5">sess_a91c33 · {patientLines.length} turn{patientLines.length === 1 ? "" : "s"} · handed off</div>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/30 px-2.5 py-1 rounded-full shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                      specialist owns call
+                    </span>
                   </div>
                 </div>
               </div>
