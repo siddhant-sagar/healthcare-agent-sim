@@ -1012,22 +1012,22 @@ const Index = () => {
 
       <footer className="border-t border-border/60 bg-background/40 backdrop-blur">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-7 flex flex-col items-center text-center gap-3.5">
-          {/* Level AI wordmark */}
+          {/* Level AI wordmark with kicker - matches the page's label/headline rhythm */}
           <a
             href="https://thelevel.ai/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Level AI website"
-            className="inline-flex items-center opacity-90 hover:opacity-100 transition-opacity"
+            aria-label="Level AI website (opens in new tab)"
+            className="group inline-flex flex-col items-center gap-1.5"
           >
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground group-hover:text-foreground/70 transition-colors">
+              An unaffiliated prototype for
+            </span>
             <img
               src={levelAiWordmark}
               alt="Level AI"
-              className="h-6 w-auto"
+              className="h-7 w-auto opacity-90 group-hover:opacity-100 transition-opacity"
             />
-            <span className="ml-2.5 font-display font-semibold text-foreground/80 text-[13px] tracking-wide">
-              prototype
-            </span>
           </a>
 
           {/* Byline */}
