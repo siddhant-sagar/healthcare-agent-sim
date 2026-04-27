@@ -122,7 +122,7 @@ const SCENARIOS: Scenario[] = [
     id: "controlled",
     title: "Controlled medication",
     sticker: "HARD STOP",
-    blurb: "Validate detects Controlled=true → immediate escalate.",
+    blurb: "Controlled flag detected pre-LLM → SELECT_MED bypassed, escalate.",
     accentRed: true,
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 207, tokens: detTok(),
@@ -132,10 +132,11 @@ const SCENARIOS: Scenario[] = [
         outcome: "match · token issued",
         patientLine: "Could you verify your date of birth, please?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 311, tokens: detTok(),
-        outcome: "2 rows" },
-      { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
-        outcome: "conf=0.91 · matched id=m_771",
-        patientLine: "Which medication would you like to refill today?" },
+        outcome: "2 rows · 1 flagged Controlled__c=true",
+        patientLine: "One moment while I pull up your medications." },
+      { state: "SELECT_MED", tool: "—", latency: 0, tokens: 0,
+        outcome: "BYPASSED · controlled flag detected pre-LLM",
+        pulseRed: true },
       { state: "VALIDATE_MED", tool: "—", latency: 91, tokens: detTok(),
         outcome: "Controlled=true → ESCALATE",
         pulseRed: true,
@@ -399,6 +400,7 @@ type StateRuntime = {
   tool?: string;
   latency?: number;
   tokens?: number;
+  outcome?: string;
   pulseRed?: boolean;
 };
 
@@ -470,6 +472,7 @@ const Index = () => {
               tool: step.tool,
               latency: step.latency,
               tokens: step.tokens,
+              outcome: step.outcome,
               pulseRed: step.pulseRed,
             };
           }
