@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import levelAiWordmark from "@/assets/levelai-wordmark.svg";
 import {
   AlertTriangle,
   Activity,
