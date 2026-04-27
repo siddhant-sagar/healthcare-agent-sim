@@ -11,7 +11,6 @@ import {
   Sparkles,
   Cpu,
   Zap,
-  ArrowRight,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -938,16 +937,6 @@ const Index = () => {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
-
-function HeroStat({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="rounded-2xl bg-card/80 backdrop-blur border border-border shadow-card px-5 py-4">
-      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className="font-display font-bold text-3xl text-foreground mt-1">{value}</div>
-      <div className="font-mono text-[11px] text-muted-foreground mt-0.5">{sub}</div>
-    </div>
-  );
-}
 
 function ScenarioCard({
   scenario, active, onClick,
