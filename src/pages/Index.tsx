@@ -614,7 +614,7 @@ const Index = () => {
       {/* ============================ MAIN GRID ============================ */}
       <main
         id="scenarios"
-        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-32"
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-10"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_360px] gap-4 lg:gap-6">
           {/* ============== LEFT - SCENARIOS ============== */}
