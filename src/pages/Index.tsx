@@ -11,7 +11,6 @@ import {
   Sparkles,
   Cpu,
   Zap,
-  ArrowRight,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -122,7 +121,7 @@ const SCENARIOS: Scenario[] = [
     id: "controlled",
     title: "Controlled medication",
     sticker: "HARD STOP",
-    blurb: "Validate detects Controlled=true → immediate escalate.",
+    blurb: "Controlled flag detected pre-LLM → SELECT_MED bypassed, escalate.",
     accentRed: true,
     steps: [
       { state: "IDENTIFY", tool: "get_patient_by_phone", latency: 207, tokens: detTok(),
@@ -132,10 +131,11 @@ const SCENARIOS: Scenario[] = [
         outcome: "match · token issued",
         patientLine: "Could you verify your date of birth, please?" },
       { state: "FETCH_MEDS", tool: "SOQL Medication__c", latency: 311, tokens: detTok(),
-        outcome: "2 rows" },
-      { state: "SELECT_MED", tool: "llm.disambiguate", latency: llmLat(), tokens: llmTok(),
-        outcome: "conf=0.91 · matched id=m_771",
-        patientLine: "Which medication would you like to refill today?" },
+        outcome: "2 rows · 1 flagged Controlled__c=true",
+        patientLine: "One moment while I pull up your medications." },
+      { state: "SELECT_MED", tool: "—", latency: 0, tokens: 0,
+        outcome: "BYPASSED · controlled flag detected pre-LLM",
+        pulseRed: true },
       { state: "VALIDATE_MED", tool: "—", latency: 91, tokens: detTok(),
         outcome: "Controlled=true → ESCALATE",
         pulseRed: true,
@@ -399,6 +399,7 @@ type StateRuntime = {
   tool?: string;
   latency?: number;
   tokens?: number;
+  outcome?: string;
   pulseRed?: boolean;
 };
 
@@ -470,6 +471,7 @@ const Index = () => {
               tool: step.tool,
               latency: step.latency,
               tokens: step.tokens,
+              outcome: step.outcome,
               pulseRed: step.pulseRed,
             };
           }
@@ -538,38 +540,22 @@ const Index = () => {
             </span>
             <span>HMAC TTL 600s</span>
           </div>
-          <a
-            href="#scenarios"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-colors px-4 py-2 text-sm font-medium shadow-card"
-          >
-            Try a scenario
-            <ArrowRight size={14} />
-          </a>
         </div>
       </header>
 
-      {/* ============================ HERO ============================ */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-6">
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-end">
+      {/* ============================ METADATA STRIP ============================ */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-card/70 backdrop-blur border border-border px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-5">
-              <Cpu size={11} className="text-primary" />
-              Healthcare AI · Voice agent simulator
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Use Case A · Voice Inbound · Salesforce-backed · Scoped LLM
             </div>
-            <h1 className="font-display font-bold text-[40px] sm:text-[56px] lg:text-[68px] leading-[1.02] tracking-tight text-foreground">
-              Deterministic where it must be.
-              <br />
-              <span className="text-primary">Smart where it can be.</span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              An inbound voice agent for medication refills. Watch six real scenarios fire through an
-              8-state machine — Salesforce-backed, scoped LLM, audited escalations.
-            </p>
+            <div className="font-display font-semibold text-foreground text-lg sm:text-xl mt-1 leading-tight">
+              Refill Agent — interactive simulator
+            </div>
           </div>
-          <div className="hidden lg:flex flex-col gap-3 text-sm">
-            <HeroStat label="Hard rules enforced" value="6" sub="R1 – R7" />
-            <HeroStat label="States visible" value="8 / 8" sub="no pagination, no hiding" />
-            <HeroStat label="Escalation reasons" value="7" sub="every failure has a code" />
+          <div className="font-mono text-[11px] text-muted-foreground">
+            6 scenarios · 8 states · 7 escalation reasons
           </div>
         </div>
       </section>
@@ -673,7 +659,12 @@ const Index = () => {
 
                       {/* label */}
                       <div className="min-w-0 flex-1">
-                        <div className="font-display font-semibold text-foreground text-[14px] truncate">
+                        <div
+                          className={[
+                            "font-display font-semibold text-foreground text-[14px] truncate",
+                            r.outcome?.startsWith("BYPASSED") ? "line-through opacity-60" : "",
+                          ].join(" ")}
+                        >
                           {s.label}
                         </div>
                         <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground truncate">
@@ -708,11 +699,13 @@ const Index = () => {
                       >
                         {r.status === "idle"
                           ? "pending"
-                          : r.status === "escalation"
-                            ? "ESCALATE"
-                            : r.status === "complete"
-                              ? "complete"
-                              : "running"}
+                          : r.outcome?.startsWith("BYPASSED")
+                            ? "BYPASSED"
+                            : r.status === "escalation"
+                              ? "ESCALATE"
+                              : r.status === "complete"
+                                ? "complete"
+                                : "running"}
                       </span>
                     </div>
                   </div>
@@ -944,16 +937,6 @@ const Index = () => {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
-
-function HeroStat({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="rounded-2xl bg-card/80 backdrop-blur border border-border shadow-card px-5 py-4">
-      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{label}</div>
-      <div className="font-display font-bold text-3xl text-foreground mt-1">{value}</div>
-      <div className="font-mono text-[11px] text-muted-foreground mt-0.5">{sub}</div>
-    </div>
-  );
-}
 
 function ScenarioCard({
   scenario, active, onClick,
