@@ -1010,47 +1010,55 @@ const Index = () => {
       </main>
 
       <footer className="border-t border-border/60 bg-background/40 backdrop-blur">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center text-center gap-5">
-          {/* Avatar + handle */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-full bg-foreground text-background flex items-center justify-center font-display font-bold text-[14px] shadow-card">
-              S
-            </div>
-            <div className="font-display font-semibold text-foreground text-[15px]">
-              siddhantsagar
-            </div>
-          </div>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-7 flex flex-col items-center text-center gap-3.5">
+          {/* Level AI wordmark */}
+          <a
+            href="https://thelevel.ai/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Level AI website"
+            className="inline-flex items-center opacity-90 hover:opacity-100 transition-opacity"
+          >
+            <img
+              src={levelAiWordmark}
+              alt="Level AI"
+              className="h-6 w-auto"
+            />
+            <span className="ml-2.5 font-display font-semibold text-foreground/80 text-[13px] tracking-wide">
+              prototype
+            </span>
+          </a>
 
           {/* Byline */}
-          <div className="text-[13px] text-muted-foreground">
+          <div className="text-[12.5px] text-muted-foreground">
             Built by <span className="text-foreground font-semibold">Siddhant Sagar</span> · Senior PM Candidate · Healthcare AI Interview Prototype
           </div>
 
           {/* Pill buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <a
               href="#scenarios"
-              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+              className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[12px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
             >
               Explore the agent
             </a>
             <a
               href="#scenarios"
-              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+              className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[12px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
             >
               View state machine
             </a>
             <a
               href="mailto:hello@example.com"
-              className="rounded-full border border-border bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
+              className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[12px] font-medium text-foreground hover:border-foreground/30 hover:shadow-card transition-all"
             >
               Discuss architecture
             </a>
           </div>
 
           {/* Disclaimer */}
-          <div className="text-[11.5px] text-muted-foreground max-w-2xl">
-            © 2026 · Prototype for portfolio purposes only · Not affiliated with, endorsed by, or associated with Level AI
+          <div className="text-[11px] text-muted-foreground max-w-2xl">
+            © 2026 · Independent prototype for portfolio purposes · Not affiliated with, endorsed by, or associated with Level AI
           </div>
         </div>
       </footer>
