@@ -526,10 +526,10 @@ const Index = () => {
             </div>
             <div className="min-w-0">
               <div className="font-display font-bold text-[15px] sm:text-base text-foreground leading-tight truncate">
-                Refill Agent
+                Cadence
               </div>
               <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-muted-foreground truncate">
-                Voice Inbound · Use Case A · v0.4
+                Use Case A · Medication Refill · v0.4
               </div>
             </div>
           </div>
@@ -552,14 +552,68 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Use Case A · Voice Inbound · Salesforce-backed · Scoped LLM
+              Patient Voice Agent · Salesforce-backed · Scoped LLM
             </div>
             <div className="font-display font-semibold text-foreground text-lg sm:text-xl mt-1 leading-tight">
-              Refill Agent — interactive simulator
+              Cadence — Use Case A · Medication Refill
             </div>
           </div>
           <div className="font-mono text-[11px] text-muted-foreground">
             6 scenarios · 8 states · 7 escalation reasons
+          </div>
+        </div>
+      </section>
+
+      {/* ============================ EXPLAINER ============================ */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+        <div className="rounded-2xl bg-card border border-border shadow-card px-6 py-5">
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-10 items-start">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-2">
+                What you're looking at
+              </div>
+              <p className="text-[14px] sm:text-[15px] text-foreground leading-relaxed">
+                Cadence is a voice agent that helps patients refill an active medication over the phone.
+                It looks up the patient by phone number, verifies date of birth, fetches their active
+                medications from Salesforce, confirms which one to refill, and submits the request to the
+                pharmacy on file. When something falls outside what the agent should handle on its own —
+                a controlled substance, a failed identity check, an ambiguous medication name — it hands
+                the call to a human with the full context already attached.
+              </p>
+              <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
+                Pick a scenario on the left to watch the agent run. The center column is the state machine.
+                The right column is what the patient hears, and what the human specialist receives on
+                handoff. The footer is live telemetry — tokens, latency, audit events.
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/40 border border-border p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-3">
+                Authority split
+              </div>
+              <div className="space-y-2.5 text-[12.5px]">
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-info mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">5 deterministic states</span>
+                    <span className="text-muted-foreground"> — identity, fetch, validate, persist. No LLM judgment.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-warning mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">2 LLM states</span>
+                    <span className="text-muted-foreground"> — disambiguate the medication name, confirm the pharmacy.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive mt-1.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">Hard stops</span>
+                    <span className="text-muted-foreground"> — controlled meds, DOB failure, inactive meds, repeated tool failure all escalate to a human with a typed context payload.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
