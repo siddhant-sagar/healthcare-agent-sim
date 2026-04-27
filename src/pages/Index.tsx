@@ -573,17 +573,10 @@ const Index = () => {
                 What you're looking at
               </div>
               <p className="text-[14px] sm:text-[15px] text-foreground leading-relaxed">
-                Cadence is a voice agent that helps patients refill an active medication over the phone.
-                It looks up the patient by phone number, verifies date of birth, fetches their active
-                medications from Salesforce, confirms which one to refill, and submits the request to the
-                pharmacy on file. When something falls outside what the agent should handle on its own -
-                a controlled substance, a failed identity check, an ambiguous medication name - it hands
-                the call to a human with the full context already attached.
+                Cadence is a voice agent for medication refills. It looks up the patient by phone, verifies date of birth, fetches active meds from Salesforce, confirms which one to refill, and submits to the pharmacy on file. Anything outside its scope - controlled substances, failed identity checks, ambiguous med names - escalates to a human with full context attached.
               </p>
               <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
-                Pick a scenario on the left to watch the agent run. The center column is the state machine.
-                The right column is what the patient hears, and what the human specialist receives on
-                handoff. The footer is live telemetry - tokens, latency, audit events.
+                Pick a scenario on the left. The center column shows the state machine. The right column shows what the patient hears, and what the specialist receives on handoff. The footer is live telemetry.
               </p>
             </div>
             <div className="rounded-xl bg-secondary/40 border border-border p-4">
